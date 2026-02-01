@@ -1,5 +1,6 @@
 // API endpoint for extracting recipe data from caption text
 // POST /api/caption - extract recipe from Instagram caption text
+// Using Gemini 2.5 Flash Lite model
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
