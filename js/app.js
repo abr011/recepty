@@ -205,11 +205,6 @@ async function handleAddSubmit(e) {
 
     closeAddModalHandler();
     await loadRecipes();
-
-    // If extraction failed, open edit modal so user can fill details
-    if (!extracted?.name) {
-      setTimeout(() => openEditModal(saved.id), 300);
-    }
   } catch (error) {
     console.error('Error saving recipe:', error);
     addStatusText.textContent = 'Chyba: ' + (error.message || 'Nepodarilo se ulozit recept');
