@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recepty</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Recepty</h1>
+      <button class="btn btn-primary" id="addRecipeBtn">+ Pridat</button>
+    </header>
+
+    <section class="filters">
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="Hledej podle nazvu nebo ingredience...">
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="originFilter">Puvod</label>
+          <select id="originFilter">
+            <option value="">Vsechny</option>
+            <option value="ceske">Ceske</option>
+            <option value="italske">Italske</option>
+            <option value="thajske">Thajske</option>
+            <option value="indicke">Indicke</option>
+            <option value="mexicke">Mexicke</option>
+            <option value="cinske">Cinske</option>
+            <option value="japonske">Japonske</option>
+            <option value="americke">Americke</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Neobsahuje</label>
+          <div class="exclusion-chips" id="exclusionChips">
+            <label class="chip">
+              <input type="checkbox" value="lepek"> Lepek
+            </label>
+            <label class="chip">
+              <input type="checkbox" value="laktoza"> Laktoza
+            </label>
+            <label class="chip">
+              <input type="checkbox" value="maso"> Maso
+            </label>
+            <label class="chip">
+              <input type="checkbox" value="orechy"> Orechy
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="recipe-list" id="recipeList">
+      <!-- Recipe cards will be rendered here -->
+    </section>
+  </div>
+
+  <!-- Add Recipe Modal (simplified - Instagram only) -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Pridat recept z Instagramu</h2>
+        <button class="modal-close" id="closeAddModal">&times;</button>
+      </div>
+
+      <form id="addForm">
+        <div class="form-group">
+          <label for="instagramUrl">Instagram URL</label>
+          <input type="url" id="instagramUrl" placeholder="https://instagram.com/p/..." required>
+        </div>
+
+        <div id="addStatus" class="add-status" style="display: none;">
+          <div class="spinner"></div>
+          <span id="addStatusText">Extrahuji recept...</span>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancelAddBtn">Zrusit</button>
+          <button type="submit" class="btn btn-primary" id="submitAddBtn">Pridat</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Recipe Modal (full form for editing) -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Upravit recept</h2>
+        <button class="modal-close" id="closeEditModal">&times;</button>
+      </div>
+
+      <form id="editForm">
+        <input type="hidden" id="editRecipeId">
+
+        <div class="form-group">
+          <label for="editRecipeName">Nazev</label>
+          <input type="text" id="editRecipeName" required>
+        </div>
+
+        <div class="form-group">
+          <label>Ingredience</label>
+          <div id="editIngredientsList" class="ingredients-list"></div>
+          <button type="button" class="btn btn-secondary btn-small" id="editAddIngredient">+ Pridat ingredienci</button>
+        </div>
+
+        <div class="form-group">
+          <label for="editRecipeOrigin">Puvod / kuchyne</label>
+          <select id="editRecipeOrigin">
+            <option value="">Vyberte...</option>
+            <option value="ceske">Ceske</option>
+            <option value="italske">Italske</option>
+            <option value="thajske">Thajske</option>
+            <option value="indicke">Indicke</option>
+            <option value="mexicke">Mexicke</option>
+            <option value="cinske">Cinske</option>
+            <option value="japonske">Japonske</option>
+            <option value="americke">Americke</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Neobsahuje</label>
+          <div class="exclusion-checkboxes">
+            <label><input type="checkbox" name="editExclusions" value="lepek"> Lepek</label>
+            <label><input type="checkbox" name="editExclusions" value="laktoza"> Laktoza</label>
+            <label><input type="checkbox" name="editExclusions" value="maso"> Maso</label>
+            <label><input type="checkbox" name="editExclusions" value="orechy"> Orechy</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editRecipeInstructions">Postup</label>
+          <textarea id="editRecipeInstructions" rows="6"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="editRecipeNotes">Poznamky</label>
+          <textarea id="editRecipeNotes" rows="2"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancelEditBtn">Zrusit</button>
+          <button type="submit" class="btn btn-primary">Ulozit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/recipes.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
