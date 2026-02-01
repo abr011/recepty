@@ -2,7 +2,7 @@
 import { db, storage, ref, get, set, push, update, remove, child, storageRef, uploadBytes, getDownloadURL } from './firebase-config.js';
 
 // API base URL - Vercel serverless functions for extraction
-const API_BASE = 'https://recepty-aaaesfeef.vercel.app';
+const API_BASE = 'https://recepty-abr011s-projects.vercel.app';
 
 const DB_PATH = 'recipes';
 
