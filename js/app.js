@@ -124,7 +124,7 @@ function renderRecipes(recipes) {
         ${recipe.origin ? `<span class="origin-tag">${escapeHtml(recipe.origin)}</span>` : ''}
       </div>
       <p class="recipe-ingredients">
-        ${recipe.ingredients.map(ing => ing.key ? `<strong>${escapeHtml(ing.name)}</strong>` : escapeHtml(ing.name)).join(', ')}
+        ${(recipe.ingredients || []).map(ing => ing.key ? `<strong>${escapeHtml(ing.name)}</strong>` : escapeHtml(ing.name)).join(', ') || 'Zadne ingredience'}
       </p>
       <p class="recipe-source">
         ${getSourceLabel(recipe)}
