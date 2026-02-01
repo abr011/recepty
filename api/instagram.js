@@ -12,7 +12,12 @@ const anthropic = new Anthropic({
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
 
 module.exports = async (req, res) => {
-  // Handle CORS
+  // Set CORS headers for all requests
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
