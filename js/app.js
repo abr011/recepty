@@ -38,6 +38,29 @@ let currentFilters = {
   exclusions: []
 };
 
+// Seen recipes tracking (localStorage)
+const SEEN_RECIPES_KEY = 'recepty_seen';
+
+function getSeenRecipes() {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN_RECIPES_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function markRecipeSeen(id) {
+  const seen = getSeenRecipes();
+  if (!seen.includes(id)) {
+    seen.push(id);
+    localStorage.setItem(SEEN_RECIPES_KEY, JSON.stringify(seen));
+  }
+}
+
+function isRecipeNew(id) {
+  return !getSeenRecipes().includes(id);
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   loadRecipes();
@@ -118,7 +141,8 @@ function renderRecipes(recipes) {
   }
 
   recipeList.innerHTML = recipes.map(recipe => `
-    <div class="recipe-card" data-id="${recipe.id}">
+    <div class="recipe-card${isRecipeNew(recipe.id) ? ' is-new' : ''}" data-id="${recipe.id}">
+      ${isRecipeNew(recipe.id) ? '<span class="new-badge">NEW</span>' : ''}
       <div class="recipe-card-header">
         <h3>${escapeHtml(recipe.name)}</h3>
         ${recipe.origin ? `<span class="origin-tag">${escapeHtml(recipe.origin)}</span>` : ''}
@@ -132,10 +156,14 @@ function renderRecipes(recipes) {
     </div>
   `).join('');
 
-  // Add click handlers to cards -> open edit modal
+  // Add click handlers to cards -> open edit modal and mark as seen
   recipeList.querySelectorAll('.recipe-card').forEach(card => {
     card.addEventListener('click', () => {
       const id = card.dataset.id;
+      markRecipeSeen(id);
+      card.classList.remove('is-new');
+      const badge = card.querySelector('.new-badge');
+      if (badge) badge.remove();
       openEditModal(id);
     });
   });

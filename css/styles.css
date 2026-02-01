@@ -182,6 +182,24 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
+.recipe-card.is-new {
+  position: relative;
+  border-left: 3px solid #FF4500;
+}
+
+.new-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #FF4500;
+  color: white;
+  font-size: 0.65em;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
 .recipe-card-header {
   display: flex;
   justify-content: space-between;
