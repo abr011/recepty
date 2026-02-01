@@ -21,60 +21,61 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { caption } = req.body;
+    // Parse body - handle both pre-parsed and raw body
+    let body = req.body;
+    if (typeof body === 'string') {
+      body = JSON.parse(body);
+    }
+    const { caption } = body;
 
     if (!caption) {
       return res.status(400).json({ error: 'Caption is required' });
     }
 
-    // Use Gemini to extract recipe from caption
+    // Use Gemini 2.5 Flash Lite (lighter model, may have separate quota)
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
-    const prompt = `Extract recipe information from this Instagram post caption:
+    const prompt = `Extract recipe information from this Instagram post caption and return ONLY a valid JSON object:
 
-"${caption}"
+Caption: "${caption}"
 
-Return a JSON object with this structure:
-{
-  "name": "Recipe name in Czech",
-  "ingredients": [
-    {"name": "ingredient name", "key": true/false}
-  ],
-  "origin": "cuisine type in Czech (ceske, italske, thajske, indicke, mexicke, cinske, japonske, americke)" or null,
-  "instructions": "Cooking instructions if mentioned",
-  "exclusions": ["lepek", "laktoza", "maso", "orechy"] (only include if dish clearly doesn't contain these),
-  "notes": "Any tips or notes from the caption"
-}
+JSON structure:
+{"name":"string","ingredients":[{"name":"string","key":boolean}],"origin":"string or null","instructions":"string","exclusions":[],"notes":"string"}
 
-Guidelines:
-- Translate recipe name to Czech if needed
-- Mark 1-2 main ingredients as "key": true
-- If origin/cuisine is mentioned or obvious from the dish, include it
-- Extract all ingredients mentioned
-- Include cooking steps if described
-- Keep the original author's tips in notes
+Rules:
+- name: Recipe name in Czech
+- ingredients: List with name and key (true for 1-2 main ingredients)
+- origin: One of: ceske, italske, thajske, indicke, mexicke, cinske, japonske, americke, or null
+- instructions: Cooking steps if mentioned
+- exclusions: Only include "lepek", "laktoza", "maso", "orechy" if dish clearly doesn't contain these
+- notes: Any tips from the caption
 
-Return ONLY the JSON object, no other text.`;
+Return ONLY the JSON, no markdown, no explanation.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let jsonText = response.text().trim();
 
     // Clean up markdown code blocks if present
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-    } else if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '');
+    jsonText = jsonText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
+
+    // Find JSON object in response
+    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('No JSON found in Gemini response:', jsonText.substring(0, 200));
+      return res.status(500).json({ error: 'Extraction failed', details: 'No JSON in response' });
     }
 
-    const extracted = JSON.parse(jsonText);
-    return res.status(200).json(extracted);
+    try {
+      const extracted = JSON.parse(jsonMatch[0]);
+      return res.status(200).json(extracted);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError.message, jsonMatch[0].substring(0, 200));
+      return res.status(500).json({ error: 'Extraction failed', details: 'Invalid JSON format' });
+    }
 
   } catch (error) {
     console.error('Caption extraction error:', error);
-    return res.status(500).json({
-      error: 'Extraction failed',
-      details: error.message
-    });
+    return res.status(500).json({ error: 'Extraction failed', details: error.message });
   }
 };
