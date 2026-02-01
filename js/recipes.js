@@ -299,3 +299,26 @@ export async function extractRecipeFromInstagram(url) {
     throw error;
   }
 }
+
+// Extract recipe from caption text (fallback when URL extraction fails)
+export async function extractRecipeFromCaption(caption) {
+  try {
+    const response = await fetch(`${API_BASE}/api/caption`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ caption })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Caption extraction failed');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error extracting recipe from caption:', error);
+    throw error;
+  }
+}

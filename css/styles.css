@@ -364,6 +364,12 @@ form {
   min-height: 100px;
 }
 
+.form-hint {
+  font-size: 0.75em;
+  color: #777;
+  margin-top: 8px;
+}
+
 /* Source Options */
 .source-options {
   display: flex;

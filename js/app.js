@@ -1,5 +1,5 @@
 // Main application logic
-import { getRecipes, getRecipe, addRecipe, updateRecipe, deleteRecipe, extractRecipeFromInstagram } from './recipes.js';
+import { getRecipes, getRecipe, addRecipe, updateRecipe, deleteRecipe, extractRecipeFromInstagram, extractRecipeFromCaption } from './recipes.js';
 
 // DOM Elements - List
 const recipeList = document.getElementById('recipeList');
@@ -12,6 +12,8 @@ const addRecipeBtn = document.getElementById('addRecipeBtn');
 const addModal = document.getElementById('addModal');
 const addForm = document.getElementById('addForm');
 const instagramUrl = document.getElementById('instagramUrl');
+const captionFallback = document.getElementById('captionFallback');
+const instagramCaption = document.getElementById('instagramCaption');
 const addStatus = document.getElementById('addStatus');
 const addStatusText = document.getElementById('addStatusText');
 const closeAddModal = document.getElementById('closeAddModal');
@@ -181,7 +183,9 @@ function getSourceLabel(recipe) {
 function openAddModal() {
   addForm.reset();
   addStatus.style.display = 'none';
+  captionFallback.style.display = 'none';
   submitAddBtn.disabled = false;
+  submitAddBtn.textContent = 'Pridat';
   addModal.classList.add('active');
   document.body.style.overflow = 'hidden';
   instagramUrl.focus();
@@ -190,12 +194,15 @@ function openAddModal() {
 function closeAddModalHandler() {
   addModal.classList.remove('active');
   document.body.style.overflow = '';
+  captionFallback.style.display = 'none';
 }
 
 async function handleAddSubmit(e) {
   e.preventDefault();
 
   const url = instagramUrl.value.trim();
+  const caption = instagramCaption.value.trim();
+
   if (!url) return;
 
   // Show loading state
@@ -206,10 +213,25 @@ async function handleAddSubmit(e) {
   let extracted = null;
 
   try {
-    // Try API extraction first
-    extracted = await extractRecipeFromInstagram(url);
+    // If user provided caption, use that for extraction
+    if (caption) {
+      extracted = await extractRecipeFromCaption(caption);
+    } else {
+      // Try API extraction from URL
+      extracted = await extractRecipeFromInstagram(url);
+    }
   } catch (error) {
-    console.log('API extraction failed, saving with URL only:', error.message);
+    console.log('Extraction failed:', error.message);
+  }
+
+  // If extraction returned empty and no caption provided, show fallback
+  if (!extracted?.name && !caption) {
+    addStatus.style.display = 'none';
+    captionFallback.style.display = 'block';
+    submitAddBtn.disabled = false;
+    submitAddBtn.textContent = 'Extrahovat';
+    instagramCaption.focus();
+    return;
   }
 
   try {

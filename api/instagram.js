@@ -33,14 +33,13 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    // Try to get data via Instagram oEmbed API
-    const oEmbedUrl = `https://api.instagram.com/oembed?url=${encodeURIComponent(url)}`;
-
     let caption = '';
     let authorName = '';
     let thumbnailUrl = '';
 
+    // Method 1: Try oEmbed API first
     try {
+      const oEmbedUrl = `https://api.instagram.com/oembed?url=${encodeURIComponent(url)}`;
       const oEmbedResponse = await fetch(oEmbedUrl);
       if (oEmbedResponse.ok) {
         const oEmbedData = await oEmbedResponse.json();
@@ -49,7 +48,75 @@ module.exports = async (req, res) => {
         thumbnailUrl = oEmbedData.thumbnail_url || '';
       }
     } catch (oEmbedError) {
-      console.log('oEmbed failed, continuing with URL only');
+      console.log('oEmbed failed, trying direct fetch');
+    }
+
+    // Method 2: If oEmbed failed, fetch the Instagram page directly
+    if (!caption && !thumbnailUrl) {
+      try {
+        const pageResponse = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5'
+          }
+        });
+
+        if (pageResponse.ok) {
+          const html = await pageResponse.text();
+
+          // Extract from meta tags
+          const ogDescMatch = html.match(/<meta\s+(?:property|name)="og:description"\s+content="([^"]*)"/) ||
+                              html.match(/<meta\s+content="([^"]*)"\s+(?:property|name)="og:description"/);
+          const descMatch = html.match(/<meta\s+(?:property|name)="description"\s+content="([^"]*)"/) ||
+                           html.match(/<meta\s+content="([^"]*)"\s+(?:property|name)="description"/);
+          const ogImageMatch = html.match(/<meta\s+(?:property|name)="og:image"\s+content="([^"]*)"/) ||
+                               html.match(/<meta\s+content="([^"]*)"\s+(?:property|name)="og:image"/);
+          const titleMatch = html.match(/<meta\s+(?:property|name)="og:title"\s+content="([^"]*)"/) ||
+                            html.match(/<meta\s+content="([^"]*)"\s+(?:property|name)="og:title"/);
+
+          // Get caption from og:description or description
+          if (ogDescMatch && ogDescMatch[1]) {
+            caption = decodeHTMLEntities(ogDescMatch[1]);
+          } else if (descMatch && descMatch[1]) {
+            caption = decodeHTMLEntities(descMatch[1]);
+          }
+
+          // Get thumbnail from og:image
+          if (ogImageMatch && ogImageMatch[1]) {
+            thumbnailUrl = decodeHTMLEntities(ogImageMatch[1]);
+          }
+
+          // Get author from title (format: "Author on Instagram: ...")
+          if (titleMatch && titleMatch[1]) {
+            const titleText = decodeHTMLEntities(titleMatch[1]);
+            const authorMatch = titleText.match(/^([^|]+?)\s+(?:on|na)\s+Instagram/i);
+            if (authorMatch) {
+              authorName = authorMatch[1].trim();
+            }
+          }
+
+          console.log('Direct fetch extracted:', { captionLength: caption.length, thumbnailUrl: !!thumbnailUrl, authorName });
+        }
+      } catch (fetchError) {
+        console.log('Direct page fetch failed:', fetchError.message);
+      }
+    }
+
+    // Helper function to decode HTML entities
+    function decodeHTMLEntities(text) {
+      return text
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#x27;/g, "'")
+        .replace(/&#x2F;/g, '/')
+        .replace(/\\u0026/g, '&')
+        .replace(/\\u003c/g, '<')
+        .replace(/\\u003e/g, '>')
+        .replace(/\\n/g, '\n');
     }
 
     let extractedFromImage = null;
