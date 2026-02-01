@@ -175,37 +175,44 @@ async function handleAddSubmit(e) {
   addStatusText.textContent = 'Extrahuji recept z Instagramu...';
   submitAddBtn.disabled = true;
 
+  let extracted = null;
+
   try {
-    // Call API to extract recipe from Instagram
-    const extracted = await extractRecipeFromInstagram(url);
+    // Try API extraction first
+    extracted = await extractRecipeFromInstagram(url);
+  } catch (error) {
+    console.log('API extraction failed, saving with URL only:', error.message);
+  }
 
-    if (!extracted || !extracted.name) {
-      throw new Error('Could not extract recipe');
-    }
-
+  try {
     addStatusText.textContent = 'Ukladam recept...';
 
-    // Save the extracted recipe
+    // Save recipe - with extracted data if available, or just URL
     const recipeData = {
-      name: extracted.name,
+      name: extracted?.name || 'Novy recept z Instagramu',
       sourceType: 'instagram',
       sourceUrl: url,
-      sourceImage: extracted.imageUrl || null,
-      ingredients: extracted.ingredients || [],
-      origin: extracted.origin || '',
+      sourceImage: extracted?.imageUrl || null,
+      ingredients: extracted?.ingredients || [],
+      origin: extracted?.origin || '',
       tags: [],
-      exclusions: extracted.exclusions || [],
-      instructions: extracted.instructions || '',
-      notes: extracted.notes || ''
+      exclusions: extracted?.exclusions || [],
+      instructions: extracted?.instructions || '',
+      notes: extracted?.notes || ''
     };
 
-    await addRecipe(recipeData);
+    const saved = await addRecipe(recipeData);
 
     closeAddModalHandler();
-    loadRecipes();
+    await loadRecipes();
+
+    // If extraction failed, open edit modal so user can fill details
+    if (!extracted?.name) {
+      setTimeout(() => openEditModal(saved.id), 300);
+    }
   } catch (error) {
-    console.error('Error adding recipe:', error);
-    addStatusText.textContent = 'Chyba: ' + (error.message || 'Nepodarilo se extrahovat recept');
+    console.error('Error saving recipe:', error);
+    addStatusText.textContent = 'Chyba: ' + (error.message || 'Nepodarilo se ulozit recept');
     submitAddBtn.disabled = false;
   }
 }

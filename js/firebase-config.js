@@ -1,12 +1,12 @@
 // Firebase configuration
 // Replace with your actual Firebase project credentials
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDvFrANzvCiY0bwYcmjMOP9QAv8Um99g3w",
+  authDomain: "library-5310e.firebaseapp.com",
+  projectId: "library-5310e",
+  storageBucket: "library-5310e.firebasestorage.app",
+  messagingSenderId: "1088476769404",
+  appId: "1:1088476769404:web:ae47c30ec02618054aadf9"
 };
 
 // Import Firebase SDK from CDN
