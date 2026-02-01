@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
     }
 
     // Use Gemini to extract recipe from caption
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
     const prompt = `Extract recipe information from this Instagram post caption:
 
