@@ -1,11 +1,9 @@
 // API endpoint for extracting recipe data from caption text
 // POST /api/caption - extract recipe from Instagram caption text
 
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-});
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
 
 module.exports = async (req, res) => {
   // Set CORS headers
@@ -28,14 +26,10 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Caption is required' });
     }
 
-    // Use Claude to extract recipe from caption
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1500,
-      messages: [
-        {
-          role: 'user',
-          content: `Extract recipe information from this Instagram post caption:
+    // Use Gemini to extract recipe from caption
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+    const prompt = `Extract recipe information from this Instagram post caption:
 
 "${caption}"
 
@@ -59,32 +53,21 @@ Guidelines:
 - Include cooking steps if described
 - Keep the original author's tips in notes
 
-Return ONLY the JSON object, no other text.`
-        }
-      ]
-    });
+Return ONLY the JSON object, no other text.`;
 
-    const content = response.content[0];
-    if (content.type === 'text') {
-      let jsonText = content.text.trim();
-      if (jsonText.startsWith('```json')) {
-        jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-      } else if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '');
-      }
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let jsonText = response.text().trim();
 
-      const extracted = JSON.parse(jsonText);
-      return res.status(200).json(extracted);
+    // Clean up markdown code blocks if present
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '');
     }
 
-    return res.status(200).json({
-      name: '',
-      ingredients: [],
-      origin: null,
-      instructions: '',
-      exclusions: [],
-      notes: ''
-    });
+    const extracted = JSON.parse(jsonText);
+    return res.status(200).json(extracted);
 
   } catch (error) {
     console.error('Caption extraction error:', error);
