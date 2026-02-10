@@ -76,7 +76,32 @@ function isFirebaseConfigured() {
   }
 }
 
-// Get all recipes
+// Get all recipes (unfiltered)
+export async function getAllRecipes() {
+  if (!isFirebaseConfigured()) {
+    return [...demoRecipes];
+  }
+
+  try {
+    const dbRef = ref(db, DB_PATH);
+    const snapshot = await get(dbRef);
+
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const data = snapshot.val();
+    return Object.keys(data).map(key => ({
+      id: key,
+      ...data[key]
+    }));
+  } catch (error) {
+    console.error('Error getting recipes:', error);
+    return [];
+  }
+}
+
+// Get filtered recipes
 export async function getRecipes(filters = {}) {
   if (!isFirebaseConfigured()) {
     console.log('Using demo data (Firebase not configured)');
@@ -109,29 +134,26 @@ export async function getRecipes(filters = {}) {
 function filterRecipes(recipes, filters) {
   let filtered = [...recipes];
 
-  // Search filter
-  if (filters.search) {
-    const searchLower = filters.search.toLowerCase();
+  // Include filter (must have ALL selected main ingredients)
+  if (filters.ingredients && filters.ingredients.length > 0) {
     filtered = filtered.filter(recipe => {
-      const nameMatch = recipe.name.toLowerCase().includes(searchLower);
-      const ingredientMatch = recipe.ingredients && recipe.ingredients.some(ing =>
-        ing.name.toLowerCase().includes(searchLower)
-      );
-      return nameMatch || ingredientMatch;
+      return filters.ingredients.every(filterIng => {
+        const filterLower = filterIng.toLowerCase();
+        return recipe.ingredients && recipe.ingredients.some(ing =>
+          ing.key && ing.name.toLowerCase() === filterLower
+        );
+      });
     });
   }
 
-  // Origin filter
-  if (filters.origin) {
-    filtered = filtered.filter(recipe => recipe.origin === filters.origin);
-  }
-
-  // Exclusion filter (show recipes that don't contain specified items)
-  if (filters.exclusions && filters.exclusions.length > 0) {
+  // Herbs exclusion filter (hide recipes that contain selected herbs)
+  if (filters.herbs && filters.herbs.length > 0) {
     filtered = filtered.filter(recipe => {
-      return filters.exclusions.every(ex =>
-        recipe.exclusions && recipe.exclusions.includes(ex)
-      );
+      // Keep recipe only if it doesn't have any of the excluded herbs
+      return !filters.herbs.some(excludedHerb => {
+        const herbLower = excludedHerb.toLowerCase();
+        return recipe.herbs && recipe.herbs.some(h => h.toLowerCase() === herbLower);
+      });
     });
   }
 
